@@ -1,0 +1,35 @@
+# Local OS and editor files
+.DS_Store
+._*
+.idea/
+*.swp
+*.swo
+*~
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.aws/
+*.pem
+*.key
+
+# Dependencies, generated output, and local logs
+node_modules/
+dist/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.log
+
+# Terraform working files and local values (keep .terraform.lock.hcl)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example
+crash.*.log
