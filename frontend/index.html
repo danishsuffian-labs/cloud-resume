@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#f6f5f1">
     <title>Danish Suffian | Cloud & Software Engineer</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="styles.css?v=about-profile">
+    <link rel="stylesheet" href="styles.css?v=roadmap-checklist">
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -73,7 +73,25 @@
         <div class="section-heading"><div><p class="eyebrow section-label">04 / SELECTED PROJECTS</p><h2 id="projects-title">Learning by building.</h2></div><p>Practical ideas. Incremental progress.<br class="desktop-break"> Engineering decisions I can explain.</p></div>
         <article class="featured-project">
           <div class="project-art" aria-hidden="true"><div class="mini-browser"><div class="browser-bar"><i></i><i></i><i></i><span>cloud-resume</span></div><div class="mini-content"><span>Danish Suffian.</span><strong>Good software.<br>Reliable clouds.</strong><div class="mini-line"></div><div class="mini-line short"></div><div class="mini-button">Explore my work ↗</div></div></div><span class="art-caption">A PERSONAL SPACE. AN ENGINEERING JOURNEY.</span></div>
-          <div class="project-copy"><span class="project-status"><span class="status-dot" aria-hidden="true"></span> IN DEVELOPMENT · PHASE 1</span><h3>Cloud Resume</h3><p>A home for my work, and a hands-on journey from a static website to an operated cloud application.</p><p class="project-detail">The first version is a responsive, accessible static frontend. AWS hosting, Terraform, CI/CD, a serverless backend, and monitoring are planned next.</p><ul class="tags" aria-label="Current project technologies"><li>HTML</li><li>CSS</li><li>Responsive design</li></ul><details><summary>Explore the project roadmap</summary><ol><li><strong>Now:</strong> polished static portfolio.</li><li>Private S3 hosting behind CloudFront, with HTTPS.</li><li>Terraform-managed infrastructure and environments.</li><li>GitHub Actions deployments using AWS OIDC.</li><li>API Gateway, Lambda, and DynamoDB.</li><li>CloudWatch dashboards and alarms.</li></ol></details></div>
+          <div class="project-copy">
+            <span class="project-status project-status-complete"><span class="status-dot" aria-hidden="true"></span>CLOUD HOSTING + AUTOMATED DEPLOYMENT</span>
+            <h3>Cloud Resume</h3>
+            <p>A home for my work, and a hands-on journey from a static website to an operated cloud application.</p>
+            <p class="project-detail">A static portfolio delivered through CloudFront with Origin Access Control for S3, using Route 53 for danishsuffian.cloud. GitHub Actions deploys updates to S3 using OIDC and temporary AWS credentials.</p>
+            <ul class="tags" aria-label="Current project technologies"><li>HTML</li><li>CSS</li><li>Amazon S3</li><li>CloudFront</li><li>Route 53</li><li>OAC</li><li>GitHub Actions</li><li>OIDC</li></ul>
+            <details>
+              <summary>Explore the project roadmap</summary>
+              <ul class="project-roadmap">
+                <li><span class="milestone milestone-done"><span class="milestone-icon" aria-hidden="true">✓</span>Done</span><span>Static portfolio with a responsive layout.</span></li>
+                <li><span class="milestone milestone-done"><span class="milestone-icon" aria-hidden="true">✓</span>Done</span><span>Custom domain danishsuffian.cloud with Route 53, CloudFront, and S3 access through OAC.</span></li>
+                <li><span class="milestone milestone-done"><span class="milestone-icon" aria-hidden="true">✓</span>Done</span><span>Automated S3 deployment from main using GitHub Actions and OIDC.</span></li>
+                <li><span class="milestone milestone-planned"><span class="milestone-icon" aria-hidden="true"></span>Planned</span><span>Terraform-managed infrastructure.</span></li>
+                <li><span class="milestone milestone-planned"><span class="milestone-icon" aria-hidden="true"></span>Planned</span><span>Deployment checks, CloudFront cache invalidation, and rollback.</span></li>
+                <li><span class="milestone milestone-planned"><span class="milestone-icon" aria-hidden="true"></span>Planned</span><span>A serverless feature with API Gateway, Lambda, and DynamoDB.</span></li>
+                <li><span class="milestone milestone-planned"><span class="milestone-icon" aria-hidden="true"></span>Planned</span><span>CloudWatch dashboards and alarms.</span></li>
+              </ul>
+            </details>
+          </div>
         </article>
         <div class="project-grid">
           <article class="project-card"><div class="project-card-top"><span class="project-status">PLANNED</span><span class="project-glyph" aria-hidden="true">↗</span></div><h3>CloudOps</h3><p>An AWS monitoring and optimization platform concept, exploring resource inventory, CloudWatch metrics, cost visibility, and operational automation.</p><ul class="tags" aria-label="Planned focus"><li>AWS</li><li>CloudWatch</li><li>Automation</li><li>SRE practices</li></ul><details><summary>Planned direction</summary><p>Start with resource visibility, then explore actionable metrics and cost optimization. Scope and implementation will evolve as the project takes shape.</p></details></article>

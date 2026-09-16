@@ -5,6 +5,8 @@
   --ink: #242720;
   --muted: #62655d;
   --accent: #b94021;
+  --done-ink: #285c3b;
+  --planned-ink: #874020;
   --line: #dadcd3;
   --surface: #eeeee7;
   --white: #fffefa;
@@ -99,12 +101,20 @@ h3 { font-size: 21px; letter-spacing: -.5px; line-height: 1.3; font-weight: 600;
 .project-copy h3 { font-size: 29px; margin-top: 20px; }
 .project-copy > p, .project-card > p { font-size: 14px; color: var(--muted); }
 .project-copy .project-detail { font-size: 13px; }
+.project-status-complete { color: var(--done-ink); }
+.project-status-complete .status-dot { background: currentColor; }
+.milestone { display: inline-flex; align-items: center; gap: 7px; font: 10px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .2px; }
+.milestone-done { color: var(--done-ink); }
+.milestone-planned { color: var(--planned-ink); }
+.milestone-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 12px; width: 12px; height: 12px; font-size: 14px; font-weight: 700; }
+.milestone-planned .milestone-icon { flex-basis: 8px; width: 8px; height: 8px; margin-inline: 2px; border: 1px solid currentColor; border-radius: 50%; }
+.project-roadmap { list-style: none; padding: 0; margin: 0 0 18px; }
+.project-roadmap li { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: baseline; gap: 12px; padding-block: 13px; color: var(--muted); }
+.project-roadmap li + li { border-top: 1px solid var(--line); }
 details { border-top: 1px solid var(--line); margin-top: 25px; font-size: 13px; }
 summary { cursor: pointer; padding-block: 15px; font-weight: 500; }
 summary:hover { color: var(--accent); }
-details p, details ol { color: var(--muted); margin-bottom: 15px; }
-details ol { padding-left: 20px; }
-details li { padding-block: 3px; }
+details p { color: var(--muted); margin-bottom: 15px; }
 .project-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 22px; }
 .project-card { border: 1px solid var(--line); border-radius: 6px; padding: 30px; }
 .project-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
