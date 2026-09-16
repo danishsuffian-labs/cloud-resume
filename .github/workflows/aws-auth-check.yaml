@@ -12,23 +12,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
-      - name: Inspect OIDC Identity Claims
-        run: |
-          python3 - <<'PY'
-          import os, json, base64, urllib.request
-
-          url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=sts.amazonaws.com"
-          request = urllib.request.Request(url, headers={
-              "Authorization": "Bearer " + os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]
-          })
-          with urllib.request.urlopen(request) as response:
-              token = json.load(response)["value"]
-
-          payload = token.split(".")[1]
-          claims = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
-          print("sub:", claims["sub"])
-          print("aud:", claims["aud"])
-          PY
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
@@ -37,3 +20,6 @@ jobs:
       - name: Verify AWS Caller Identity
         run: |
           aws sts get-caller-identity
+      - name: Preview Frontend Deployment
+        run: |
+          aws s3 sync frontend/ s3://danishsuffian-resume-s3/ --dryrun
