@@ -77,16 +77,17 @@
             <span class="project-status project-status-complete"><span class="status-dot" aria-hidden="true"></span>CLOUD HOSTING + AUTOMATED DEPLOYMENT</span>
             <h3>Cloud Resume</h3>
             <p>A home for my work, and a hands-on journey from a static website to an operated cloud application.</p>
-            <p class="project-detail">A static portfolio delivered through CloudFront with Origin Access Control for S3, using Route 53 for danishsuffian.cloud. GitHub Actions deploys updates to S3 using OIDC and temporary AWS credentials.</p>
-            <ul class="tags" aria-label="Current project technologies"><li>HTML</li><li>CSS</li><li>Amazon S3</li><li>CloudFront</li><li>Route 53</li><li>OAC</li><li>GitHub Actions</li><li>OIDC</li></ul>
+            <p class="project-detail">A static portfolio served over HTTPS at danishsuffian.cloud through Route 53, CloudFront, and S3 with Origin Access Control. GitHub Actions deploys updates using OIDC and invalidates the CloudFront cache after each upload.</p>
+            <ul class="tags" aria-label="Current project technologies"><li>HTML</li><li>CSS</li><li>Amazon S3</li><li>CloudFront</li><li>Route 53</li><li>HTTPS</li><li>OAC</li><li>GitHub Actions</li><li>OIDC</li></ul>
             <details>
               <summary>Explore the project roadmap</summary>
               <ul class="project-roadmap">
                 <li><span class="milestone milestone-done"><span class="milestone-icon" aria-hidden="true">✓</span>Done</span><span>Static portfolio with a responsive layout.</span></li>
-                <li><span class="milestone milestone-done"><span class="milestone-icon" aria-hidden="true">✓</span>Done</span><span>Custom domain danishsuffian.cloud with Route 53, CloudFront, and S3 access through OAC.</span></li>
+                <li><span class="milestone milestone-done"><span class="milestone-icon" aria-hidden="true">✓</span>Done</span><span>HTTPS on danishsuffian.cloud with Route 53, CloudFront, and S3 access through OAC.</span></li>
                 <li><span class="milestone milestone-done"><span class="milestone-icon" aria-hidden="true">✓</span>Done</span><span>Automated S3 deployment from main using GitHub Actions and OIDC.</span></li>
+                <li><span class="milestone milestone-done"><span class="milestone-icon" aria-hidden="true">✓</span>Done</span><span>CloudFront cache invalidation after S3 uploads.</span></li>
                 <li><span class="milestone milestone-planned"><span class="milestone-icon" aria-hidden="true"></span>Planned</span><span>Terraform-managed infrastructure.</span></li>
-                <li><span class="milestone milestone-planned"><span class="milestone-icon" aria-hidden="true"></span>Planned</span><span>Deployment checks, CloudFront cache invalidation, and rollback.</span></li>
+                <li><span class="milestone milestone-planned"><span class="milestone-icon" aria-hidden="true"></span>Planned</span><span>Deployment checks, branch protections, and rollback.</span></li>
                 <li><span class="milestone milestone-planned"><span class="milestone-icon" aria-hidden="true"></span>Planned</span><span>A serverless feature with API Gateway, Lambda, and DynamoDB.</span></li>
                 <li><span class="milestone milestone-planned"><span class="milestone-icon" aria-hidden="true"></span>Planned</span><span>CloudWatch dashboards and alarms.</span></li>
               </ul>

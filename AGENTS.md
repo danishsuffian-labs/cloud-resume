@@ -19,8 +19,8 @@ The active scope is **the static frontend plus user-guided GitHub Actions/OIDC l
 - `frontend/styles.css`: shared design tokens, component classes, responsive behavior, and print styles.
 - `frontend/favicon.svg`: two-line “Danish Suffian” SVG wordmark.
 - `frontend/assets/images/danish.webp`: supplied portrait, presented in a circular frame beside the About heading.
-- `.github/workflows/aws-auth-check.yaml`: **Verify AWS Authentication**, triggered by pushes to `main`; checks out code, assumes the configured AWS role using OIDC, and checks caller identity. It then syncs `frontend/` to `danishsuffian-resume-s3` without deletion. The owner confirmed successful OIDC authentication and upload; live-site verification remains.
-- Hosting: owner-confirmed Route 53 domain `danishsuffian.cloud`, CloudFront, and S3 origin access through OAC.
+- `.github/workflows/deploy-s3.yaml`: **Deploy Portfolio**, triggered by pushes to `main`; checks out code, assumes the configured AWS role using OIDC, and checks caller identity. It then syncs `frontend/` to `danishsuffian-resume-s3` without deletion and requests `/*` invalidation on CloudFront distribution `E2MC444L6LW7DX`. The owner confirmed success; the workflow does not wait for invalidation completion.
+- Hosting: owner-confirmed HTTPS and Route 53 domain `danishsuffian.cloud`, CloudFront, and S3 origin access through OAC.
 - `backend/` and `infrastructure/`: reserved directories only.
 - No package manager, build step, JavaScript, framework, or automated test suite currently exists.
 
@@ -38,7 +38,7 @@ Keep HTML/CSS as the default. Add dependencies or abstractions only to solve a c
 
 ## Deployment authentication
 
-Use GitHub OIDC and a dedicated IAM role in the production account for deployment. Keep human access through IAM Identity Center separate. Do not add long-lived AWS keys to the repository or workflow. GitHub’s identity token is exchanged through AWS STS for temporary AWS credentials; it is not sent directly to S3. Do not mark OIDC or deployment verified without a successful run. The identity check verifies authentication, not S3 upload permissions. When evolving the check into `deploy-s3.yaml`, retain checkout and authentication in the deployment job.
+Use GitHub OIDC and a dedicated IAM role in the production account for deployment. Keep human access through IAM Identity Center separate. Do not add long-lived AWS keys to the repository or workflow. GitHub’s identity token is exchanged through AWS STS for temporary AWS credentials; it is not sent directly to S3. Do not mark OIDC or deployment verified without a successful run. The identity check verifies authentication, not S3 upload permissions. Retain checkout and authentication in the deployment job, with invalidation after the S3 upload.
 
 ## Validation
 
@@ -56,7 +56,7 @@ Do not add a test framework for a simple copy or styling change. Do not report b
 
 - Keep setup and publishing instructions in `README.md`, work status and verification evidence in `PLAN.md`, deferred content ideas in `FUTURE.md`, and architecture rationale in `docs/architecture.md`.
 - Keep these project documents in version control. Publish only the contents of `frontend/` to S3; `.gitignore` does not filter uploads.
-- Pushes to `main` trigger real S3 uploads. Treat workflow and frontend changes accordingly; do not push or deploy unless authorized.
+- Pushes to `main` trigger real S3 uploads and CloudFront invalidations. Treat workflow and frontend changes accordingly; do not push or deploy unless authorized.
 - Distinguish owner-confirmed deployment evidence from independently executed browser or AWS checks.
 - Update relevant documentation when behavior, structure, or decisions change.
 - Mark a checklist item complete only with supporting evidence; distinguish implementation from verification.

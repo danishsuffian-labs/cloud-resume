@@ -14,7 +14,7 @@ Current decision: keep plain HTML/CSS. Revisit React when a concrete interaction
 
 ### Implemented
 
-- [x] Update the public project roadmap to a checklist with green “Done” checkmarks and orange “Planned” circles, including owner-confirmed Route 53, CloudFront, and OAC setup. Keep outstanding verification in this internal plan.
+- [x] Update the public project roadmap to a checklist with green “Done” checkmarks and orange “Planned” circles, including owner-confirmed HTTPS, Route 53, CloudFront, OAC, and automated cache invalidation. Keep outstanding verification in this internal plan.
 - [x] Record deferred portfolio ideas in `FUTURE.md`, expand Git ignore rules, and document which files to publish to S3. GitHub Actions execution and S3 upload are now confirmed by the owner; live-site verification remains.
 - [x] Create the project directory structure and local preview instructions.
 - [x] Build hero, about, experience, technical skills, projects, contact, and footer sections.
@@ -51,7 +51,7 @@ No source-level blocker to initial GitHub publication was found. This does not c
 
 **Completion criteria:** the owner is happy with the content and design; relevant browser checks pass; no broken internal links or missing assets remain; all project status claims match implemented work.
 
-## Phase 2 — AWS hosting (domain, CloudFront, and OAC configured)
+## Phase 2 — AWS hosting (HTTPS, domain, CloudFront, and OAC configured)
 
 The deployment targets `danishsuffian-resume-s3` in `ap-southeast-1`. On 2026-09-16 the owner confirmed successful upload and the Route 53 domain `danishsuffian.cloud` routing to CloudFront, with S3 origin access through OAC. This records owner-confirmed implementation; certificate, cache, and direct-bucket access checks have not been independently performed.
 
@@ -59,6 +59,7 @@ The deployment targets `danishsuffian-resume-s3` in `ap-southeast-1`. On 2026-09
 - [ ] Inspect the custom-domain site and confirm the page and all assets load correctly.
 - [x] Configure `danishsuffian.cloud` and Route 53 DNS pointing to CloudFront (owner confirmation).
 - [x] Configure CloudFront with S3 origin access through OAC (owner confirmation).
+- [x] Integrate HTTPS for `danishsuffian.cloud` (owner confirmation).
 - [ ] Define appropriate HTML/asset caching and response security headers.
 - [ ] Verify HTTPS, domain routing, cache behavior, and denied direct public S3 access.
 - [ ] Document the architecture, manual setup, costs, and teardown steps.
@@ -75,11 +76,11 @@ The deployment targets `danishsuffian-resume-s3` in `ap-southeast-1`. On 2026-09
 
 **Completion criteria:** infrastructure can be reproduced from documented Terraform configuration with isolated environment state and reviewed changes.
 
-## Phase 4 — CI/CD (OIDC and S3 deployment working; safeguards remain)
+## Phase 4 — CI/CD (OIDC, S3 deployment, and cache invalidation working)
 
-The workflow `.github/workflows/aws-auth-check.yaml`, still named **Verify AWS Authentication**, runs on pushes to `main`. It checks out code, assumes `cloud-resume-github-actions` through OIDC, verifies the caller identity, and syncs `frontend/` to `s3://danishsuffian-resume-s3/`. Direct pushes and merges from branches other than `dev` also trigger it unless repository rules restrict them.
+The workflow `.github/workflows/deploy-s3.yaml`, named **Deploy Portfolio**, runs on pushes to `main`. It checks out code, assumes `cloud-resume-github-actions` through OIDC, verifies the caller identity, syncs `frontend/` to `s3://danishsuffian-resume-s3/`, and requests `/*` invalidation on distribution `E2MC444L6LW7DX`. Direct pushes and merges from branches other than `dev` also trigger it unless repository rules restrict them.
 
-Evidence as of 2026-09-16: the owner supplied the emitted OIDC subject and audience, confirmed authentication after correcting the trust policy, shared a dry-run log for all four frontend assets, and confirmed successful actual upload. No independent AWS inspection or live browser check was performed during this update.
+Evidence as of 2026-09-16: the owner supplied the emitted OIDC subject and audience, confirmed authentication after correcting the trust policy, shared a dry-run log for all four frontend assets, and confirmed successful actual upload. The owner subsequently confirmed the renamed workflow works with CloudFront invalidation, and that HTTPS is integrated. No independent AWS inspection or live browser check was performed during this update.
 
 - [x] Place the workflow in `.github/workflows/` and define the push-to-main trigger.
 - [x] Add checkout v6, `contents: read`, `id-token: write`, the role ARN, and AWS region.
@@ -87,11 +88,12 @@ Evidence as of 2026-09-16: the owner supplied the emitted OIDC subject and audie
 - [x] Retain **Verify AWS Caller Identity** and remove temporary OIDC diagnostics.
 - [x] Preview the four frontend uploads with `--dryrun`; owner-supplied log shows correct bucket-root paths.
 - [x] Remove `--dryrun` and deploy to S3 successfully (owner confirmation).
-- [ ] Rename the workflow file/display name to describe deployment, when desired.
+- [x] Rename the workflow to `deploy-s3.yaml`, display name **Deploy Portfolio**, and job ID `deploy`.
 - [ ] Review AWS policy scope against the actual upload needs; the owner reports PutObject, GetObject, ListBucket, and DeleteObject permissions. The workflow does not use `--delete`.
 - [ ] Add appropriate frontend checks before deployment.
 - [ ] Establish branch/environment protections and a practical rollback procedure.
-- [ ] Add CloudFront cache invalidation to the existing deployment workflow.
+- [x] Add `cloudfront:CreateInvalidation` permission and the post-upload invalidation step; successful workflow execution confirmed by the owner.
+- [ ] Consider waiting for invalidation completion if deployment success should also guarantee CloudFront propagation. The current workflow only submits the request.
 - [ ] Add a separate infrastructure workflow when Terraform is ready.
 
 **Completion criteria:** deployment succeeds after appropriate checks, without long-lived AWS credentials in GitHub; protections, cache handling where applicable, and rollback are documented and verified. A successful upload alone does not complete every item in this phase.
