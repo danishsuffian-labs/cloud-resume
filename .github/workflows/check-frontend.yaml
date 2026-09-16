@@ -1,0 +1,19 @@
+name: Check Frontend
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  check_frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+      - name: Check Frontend References
+        run: |
+          python3 scripts/check_frontend.py
