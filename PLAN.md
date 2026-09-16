@@ -6,7 +6,7 @@ Create a professional portfolio that communicates Danish Suffian’s software an
 
 ## Current position
 
-**Active work: Phase 1 frontend verification and Phase 4 GitHub Actions/OIDC learning.** The static implementation exists, and the owner approved the circular portrait and About layout. Browser verification remains before considering Phase 1 complete; additional content enhancements are deferred in `FUTURE.md`. The owner has authored an OIDC authentication-check workflow as the first step toward S3 deployment. Terraform, backend, and observability remain planning only.
+**Active work: frontend/live-site verification and incremental hosting and deployment improvements.** The static implementation exists, and the owner approved the circular portrait and About layout. Browser verification remains before considering Phase 1 complete; additional content enhancements are deferred in `FUTURE.md`. GitHub Actions now uploads the frontend to S3 using OIDC; the owner confirmed successful authentication and deployment on 2026-09-16. Phase 4 delivery began before Terraform, so phase numbers group work rather than enforce execution order. Terraform, backend, and observability remain planning only.
 
 Current decision: keep plain HTML/CSS. Revisit React when a concrete interaction benefits from component state, or when learning React becomes an explicit project goal. See `docs/architecture.md` for the reasoning.
 
@@ -14,7 +14,8 @@ Current decision: keep plain HTML/CSS. Revisit React when a concrete interaction
 
 ### Implemented
 
-- [x] Record deferred portfolio ideas in `FUTURE.md`, expand Git ignore rules, and document which files to publish to S3. GitHub push and AWS deployment remain unverified.
+- [x] Update the public project roadmap to a checklist with green “Done” checkmarks and orange “Planned” circles, including owner-confirmed Route 53, CloudFront, and OAC setup. Keep outstanding verification in this internal plan.
+- [x] Record deferred portfolio ideas in `FUTURE.md`, expand Git ignore rules, and document which files to publish to S3. GitHub Actions execution and S3 upload are now confirmed by the owner; live-site verification remains.
 - [x] Create the project directory structure and local preview instructions.
 - [x] Build hero, about, experience, technical skills, projects, contact, and footer sections.
 - [x] Add responsive CSS, keyboard focus, skip navigation, native project disclosures, reduced-motion support, and print styles.
@@ -34,7 +35,7 @@ Current decision: keep plain HTML/CSS. Revisit React when a concrete interaction
 - [x] Record the owner’s approval of the circular portrait and About layout.
 - [x] Refresh all five Markdown documents to match the implementation and publication boundaries.
 - [x] Initialize Git, create the initial commit, and configure the origin remote (observed initial commit `7ba1866` and remote for `DanishSuffian/cloud-resume`).
-- [ ] Verify publication to GitHub; local Git state does not establish a successful remote push.
+- [x] Publish the workflow to GitHub: owner-supplied Actions logs and successful run confirmation establish remote execution in `danishsuffian-labs/cloud-resume`.
 
 No source-level blocker to initial GitHub publication was found. This does not complete the browser checks or establish a live deployment.
 
@@ -50,13 +51,14 @@ No source-level blocker to initial GitHub publication was found. This does not c
 
 **Completion criteria:** the owner is happy with the content and design; relevant browser checks pass; no broken internal links or missing assets remain; all project status claims match implemented work.
 
-## Phase 2 — AWS hosting (not started)
+## Phase 2 — AWS hosting (domain, CloudFront, and OAC configured)
 
-Manual S3 website hosting has been discussed; no deployment has been verified. `README.md` explains the upload layout and the difference between direct S3 website hosting and the planned private S3/CloudFront setup.
+The deployment targets `danishsuffian-resume-s3` in `ap-southeast-1`. On 2026-09-16 the owner confirmed successful upload and the Route 53 domain `danishsuffian.cloud` routing to CloudFront, with S3 origin access through OAC. This records owner-confirmed implementation; certificate, cache, and direct-bucket access checks have not been independently performed.
 
-- [ ] Choose domain, AWS account/region, and deployment environment.
-- [ ] Serve private S3 content through CloudFront using Origin Access Control.
-- [ ] Configure ACM HTTPS and Route 53 DNS records.
+- [x] Configure the production deployment role, bucket destination, and `ap-southeast-1` region in the workflow; successful upload confirmed by the owner.
+- [ ] Inspect the custom-domain site and confirm the page and all assets load correctly.
+- [x] Configure `danishsuffian.cloud` and Route 53 DNS pointing to CloudFront (owner confirmation).
+- [x] Configure CloudFront with S3 origin access through OAC (owner confirmation).
 - [ ] Define appropriate HTML/asset caching and response security headers.
 - [ ] Verify HTTPS, domain routing, cache behavior, and denied direct public S3 access.
 - [ ] Document the architecture, manual setup, costs, and teardown steps.
@@ -73,24 +75,26 @@ Manual S3 website hosting has been discussed; no deployment has been verified. `
 
 **Completion criteria:** infrastructure can be reproduced from documented Terraform configuration with isolated environment state and reviewed changes.
 
-## Phase 4 — CI/CD (authentication check implemented; execution pending)
+## Phase 4 — CI/CD (OIDC and S3 deployment working; safeguards remain)
 
-The workflow `.github/workflows/aws-auth-check.yaml` is named **Verify AWS Authentication**. It checks out code, assumes the configured `cloud-resume-github-actions` role through OIDC in `ap-southeast-1`, and runs **Verify AWS Caller Identity**. The local file has a full role ARN and triggers on pushes to `main`. As of the 2026-09-16 source inspection, the workflow is untracked locally; no successful Actions run or AWS-side configuration has been verified. It contains no S3 upload step.
+The workflow `.github/workflows/aws-auth-check.yaml`, still named **Verify AWS Authentication**, runs on pushes to `main`. It checks out code, assumes `cloud-resume-github-actions` through OIDC, verifies the caller identity, and syncs `frontend/` to `s3://danishsuffian-resume-s3/`. Direct pushes and merges from branches other than `dev` also trigger it unless repository rules restrict them.
 
-- [x] Record the OIDC authentication decision.
-- [x] Place `aws-auth-check.yaml` in `.github/workflows/`, set its display name, and define the push-to-main trigger.
-- [x] Add checkout, `contents: read`, `id-token: write`, a full role ARN, and AWS region.
-- [x] Add the **Verify AWS Caller Identity** step using `aws sts get-caller-identity`.
-- [ ] Commit and push the workflow, then verify OIDC role assumption and the expected production identity in Actions logs.
-- [ ] Configure the target S3 bucket and required upload permissions.
-- [ ] After authentication succeeds, evolve the workflow into `deploy-s3.yaml`, retaining checkout and authentication and adding the frontend upload.
+Evidence as of 2026-09-16: the owner supplied the emitted OIDC subject and audience, confirmed authentication after correcting the trust policy, shared a dry-run log for all four frontend assets, and confirmed successful actual upload. No independent AWS inspection or live browser check was performed during this update.
+
+- [x] Place the workflow in `.github/workflows/` and define the push-to-main trigger.
+- [x] Add checkout v6, `contents: read`, `id-token: write`, the role ARN, and AWS region.
+- [x] Verify OIDC authentication after matching the trust policy to the emitted subject containing immutable IDs (owner confirmation).
+- [x] Retain **Verify AWS Caller Identity** and remove temporary OIDC diagnostics.
+- [x] Preview the four frontend uploads with `--dryrun`; owner-supplied log shows correct bucket-root paths.
+- [x] Remove `--dryrun` and deploy to S3 successfully (owner confirmation).
+- [ ] Rename the workflow file/display name to describe deployment, when desired.
+- [ ] Review AWS policy scope against the actual upload needs; the owner reports PutObject, GetObject, ListBucket, and DeleteObject permissions. The workflow does not use `--delete`.
 - [ ] Add appropriate frontend checks before deployment.
-- [ ] Configure GitHub Actions OIDC with scoped AWS role trust and permissions.
-- [ ] Deploy the frontend to S3 and refresh CloudFront content using the chosen caching strategy.
-- [ ] Establish environment protections and a practical rollback procedure.
-- [ ] Add a separate infrastructure workflow when the Terraform process is ready.
+- [ ] Establish branch/environment protections and a practical rollback procedure.
+- [ ] Add CloudFront cache invalidation to the existing deployment workflow.
+- [ ] Add a separate infrastructure workflow when Terraform is ready.
 
-**Completion criteria:** the intended branch deploys successfully after checks, without long-lived AWS credentials in GitHub, and rollback is documented.
+**Completion criteria:** deployment succeeds after appropriate checks, without long-lived AWS credentials in GitHub; protections, cache handling where applicable, and rollback are documented and verified. A successful upload alone does not complete every item in this phase.
 
 ## Phase 5 — Serverless backend (not started)
 

@@ -1,8 +1,8 @@
 # Future portfolio improvements
 
-Deferred ideas, not authorization to implement. The phased engineering roadmap, GitHub publication status, and outstanding validation remain in [PLAN.md](PLAN.md). These optional content improvements are not prerequisites for the initial GitHub push.
+Deferred ideas, not authorization to implement. The phased engineering roadmap, GitHub publication status, and outstanding validation remain in [PLAN.md](PLAN.md). These optional content improvements are separate from the working S3 deployment workflow.
 
-- [ ] Write a Cloud Resume project story covering the problem, personal contribution, key decisions, and lessons learned. Distinguish completed work from planned capabilities.
+- [ ] Write a Cloud Resume project story covering the problem, personal contribution, key decisions, and lessons learned. Include the implemented OIDC authentication, immutable subject troubleshooting, automated S3 upload, and Route 53/CloudFront/OAC hosting for danishsuffian.cloud. Distinguish those milestones from planned Terraform, deployment safeguards, and backend capabilities.
 - [ ] Add verified employers, roles, dates, and concrete achievements when supplied by the owner.
 - [ ] Add a downloadable résumé link once the owner supplies a PDF approved for publication.
 

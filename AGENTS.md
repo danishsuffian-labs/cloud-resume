@@ -19,7 +19,8 @@ The active scope is **the static frontend plus user-guided GitHub Actions/OIDC l
 - `frontend/styles.css`: shared design tokens, component classes, responsive behavior, and print styles.
 - `frontend/favicon.svg`: two-line “Danish Suffian” SVG wordmark.
 - `frontend/assets/images/danish.webp`: supplied portrait, presented in a circular frame beside the About heading.
-- `.github/workflows/aws-auth-check.yaml`: **Verify AWS Authentication**, triggered by pushes to `main`; checks out code, assumes the configured AWS role using OIDC, and checks caller identity. No S3 upload step exists; successful execution is unverified.
+- `.github/workflows/aws-auth-check.yaml`: **Verify AWS Authentication**, triggered by pushes to `main`; checks out code, assumes the configured AWS role using OIDC, and checks caller identity. It then syncs `frontend/` to `danishsuffian-resume-s3` without deletion. The owner confirmed successful OIDC authentication and upload; live-site verification remains.
+- Hosting: owner-confirmed Route 53 domain `danishsuffian.cloud`, CloudFront, and S3 origin access through OAC.
 - `backend/` and `infrastructure/`: reserved directories only.
 - No package manager, build step, JavaScript, framework, or automated test suite currently exists.
 
@@ -31,7 +32,7 @@ Keep HTML/CSS as the default. Add dependencies or abstractions only to solve a c
 - Preserve the clean, warm neutral design, restrained orange accents, and readable typography.
 - Use “Danish” or “Danish Suffian” for visible branding. Avoid the `ds` initials mark; the owner identified an unwanted local association. The current favicon uses the full name on two lines. Preserve the owner-approved circular portrait and About layout.
 - Use only supplied professional facts. Do not invent employers, dates, certifications, metrics, project outcomes, or links.
-- Distinguish implemented capabilities from planned work. Preserve honest project status labels.
+- Distinguish implemented capabilities from planned work. Use “Done” and “Planned” in the public project roadmap, with readable text labels alongside status colors. Keep verification tasks in `PLAN.md`.
 - Maintain semantic headings, meaningful link text, keyboard access, visible focus, reduced-motion support, and mobile layouts.
 - Prefer native HTML controls and local assets. Avoid unnecessary animation, remote fonts, trackers, or a simulated contact form.
 
@@ -55,7 +56,8 @@ Do not add a test framework for a simple copy or styling change. Do not report b
 
 - Keep setup and publishing instructions in `README.md`, work status and verification evidence in `PLAN.md`, deferred content ideas in `FUTURE.md`, and architecture rationale in `docs/architecture.md`.
 - Keep these project documents in version control. Publish only the contents of `frontend/` to S3; `.gitignore` does not filter uploads.
-- GitHub pushes do not deploy the site until a deployment workflow is implemented.
+- Pushes to `main` trigger real S3 uploads. Treat workflow and frontend changes accordingly; do not push or deploy unless authorized.
+- Distinguish owner-confirmed deployment evidence from independently executed browser or AWS checks.
 - Update relevant documentation when behavior, structure, or decisions change.
 - Mark a checklist item complete only with supporting evidence; distinguish implementation from verification.
 - Explain significant changes, validation performed, and unresolved limitations in the handoff.

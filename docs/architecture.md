@@ -26,7 +26,7 @@ The frontend includes a skip link, descriptive landmarks, hierarchical headings,
 
 ## Content integrity
 
-The experience section summarizes supplied areas of work rather than presenting a dated employment history. Future cloud services are labeled as planned. No metrics, certifications, employers, live deployments, or unprovided project links are claimed.
+The experience section summarizes supplied areas of work rather than presenting a dated employment history. Future cloud services are labeled as planned. No unprovided metrics, certifications, employers, or project links are claimed. The portfolio describes owner-confirmed automated S3 uploads and Route 53/CloudFront/OAC hosting. Its public roadmap uses a checklist with green checkmarks for “Done,” orange outlined circles for “Planned,” and subtle row dividers. Status text remains visible so meaning does not depend on color alone; outstanding verification is tracked in `PLAN.md`, not presented as a public milestone.
 
 ## Verification boundary
 
@@ -36,13 +36,13 @@ The 2026-09-15 source review verified HTML nesting, references, image attributes
 
 Markdown documents belong to the source repository: `README.md` explains usage, `AGENTS.md` guides contributors using coding agents, `PLAN.md` tracks delivery and evidence, and `FUTURE.md` holds deferred content ideas. This document records architecture decisions. Keep them versioned with the code so instructions and rationale evolve together.
 
-## Future deployment boundary
+## Deployment boundary
 
-`frontend/` is the complete static deployment artifact. Upload its contents to the bucket root, placing `index.html` beside `styles.css`, `favicon.svg`, and `assets/`. Repository documentation stays outside that artifact. Backend code and infrastructure can be introduced independently into their reserved directories. The frontend contains no API endpoint, credential, or analytics collector. An authentication-check workflow exists in `.github/workflows/aws-auth-check.yaml`; AWS resources and deployment have not been inspected or verified.
+`frontend/` is the complete static deployment artifact. Upload its contents to the bucket root, placing `index.html` beside `styles.css`, `favicon.svg`, and `assets/`. Repository documentation stays outside that artifact. Backend code and infrastructure can be introduced independently into their reserved directories. The frontend contains no API endpoint, credential, or analytics collector. The workflow in `.github/workflows/aws-auth-check.yaml` uploads the frontend to S3. The owner confirmed successful execution; AWS resources and live website access have not been independently inspected.
 
-When AWS hosting is introduced, Route 53 will resolve the domain to CloudFront; CloudFront will serve content from private S3 using Origin Access Control. DNS resolves the hostname rather than proxying application requests. HTTPS, cache behavior, response security headers, and deployment permissions will be configured in that phase. The stylesheet URL includes a manual revision query to refresh cached CSS after the portrait sizing change. This is not an automated asset-versioning strategy; do not assume immutable caching.
+The owner confirmed Route 53 configuration for `danishsuffian.cloud` pointing to CloudFront, with CloudFront accessing S3 through OAC. DNS resolves the hostname; it does not proxy requests. The request path is browser → CloudFront → S3. Direct-bucket restrictions and certificate configuration still require independent inspection. The stylesheet URL includes a manual revision query for the milestone styling change; this is not an automated versioning strategy and does not replace CloudFront cache handling.
 
-GitHub stores the source; S3 serves uploaded website files. The **Verify AWS Authentication** workflow responds to pushes to `main` but checks AWS identity only, so a GitHub push does not yet update S3. Direct S3 website hosting was discussed as a manual first step; the planned HTTPS architecture remains private S3 with CloudFront and OAC. Deployment instructions are in [README.md](../README.md), and implementation status is in [PLAN.md](../PLAN.md).
+GitHub stores the source; S3 serves uploaded website files. The workflow retains the display name **Verify AWS Authentication** but now checks identity and uploads the frontend on pushes to `main`. CloudFront with OAC and the Route 53 domain are now configured according to the owner. Deployment instructions are in [README.md](../README.md), and implementation status is in [PLAN.md](../PLAN.md).
 
 ## Deployment authentication: GitHub OIDC
 
@@ -59,6 +59,24 @@ The authentication sequence is:
 
 This avoids storing long-lived AWS keys in GitHub and their manual rotation. AWS still issues a temporary access key ID, secret access key, and session token with an expiration. New credentials are requested for subsequent sessions. Expiration does not replace scoped trust and permissions. See [GitHub OIDC setup](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws) and [AWS STS credential exchange](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_request.html).
 
-Implementation status: `.github/workflows/aws-auth-check.yaml` defines a push-to-main trigger, an Ubuntu runner, checkout, OIDC permissions, the full ARN of `cloud-resume-github-actions`, and region `ap-southeast-1`. Its last step, **Verify AWS Caller Identity**, runs `aws sts get-caller-identity`. This checks the account and assumed-role session; it does not test S3 permissions or write objects. Successful OIDC authentication and deployment remain unverified in [PLAN.md](../PLAN.md).
+## Current workflow and verification
 
-The next increment is to verify authentication before evolving this workflow into `deploy-s3.yaml`. Renaming the file does not change its trigger; the top-level `name` controls the display name. Checkout and credential configuration remain necessary in the deployment job. Separate jobs or workflows do not automatically share the checkout or temporary credentials.
+`.github/workflows/aws-auth-check.yaml` uses `actions/checkout@v6`, `aws-actions/configure-aws-credentials@v6.3.0`, the configured deployment role, and region `ap-southeast-1`. After `aws sts get-caller-identity`, it runs:
+
+```sh
+aws s3 sync frontend/ s3://danishsuffian-resume-s3/
+```
+
+This uploads new or changed files to the bucket root. There is no `--delete`, so objects removed from the repository remain in S3 until separately removed. There are no automated frontend checks, CloudFront invalidations, or implemented rollback steps yet.
+
+The authentication issue was resolved by matching the trust policy to the exact subject GitHub emitted:
+
+```text
+repo:danishsuffian-labs@329593354/cloud-resume@1371270362:ref:refs/heads/main
+```
+
+The audience is `sts.amazonaws.com`. These identifiers are identity metadata, not credentials. Preserve the exact match; do not broaden it to bypass an authentication error. Temporary token-inspection code was removed after diagnosis.
+
+On 2026-09-16 the owner confirmed successful authentication and actual upload, following a dry run showing `index.html`, `styles.css`, `favicon.svg`, and `assets/images/danish.webp` at the expected paths. This records user-confirmed deployment evidence, not an independent AWS audit. Live-site and browser verification remain in [PLAN.md](../PLAN.md).
+
+Checkout and authentication must remain in the deployment job. Separate jobs do not inherit its local files or credentials. The workflow filename and display name can be updated to describe deployment without changing the trigger or upload behavior.

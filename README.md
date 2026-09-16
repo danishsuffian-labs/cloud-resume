@@ -1,6 +1,6 @@
 # Cloud Resume
 
-Danish Suffian’s personal portfolio, connecting software engineering with cloud engineering. Phase 1 is a responsive static website with no build step, JavaScript, runtime dependencies, or external font requests.
+Danish Suffian’s personal portfolio, connecting software engineering with cloud engineering. The responsive static frontend has no build step, JavaScript, runtime dependencies, or external font requests. GitHub Actions now deploys its files to S3 using OIDC; the owner confirmed successful authentication and upload on 2026-09-16.
 
 ## Run locally
 
@@ -26,7 +26,7 @@ cloud-resume/
 ├── docs/
 │   └── architecture.md
 ├── .github/workflows/
-│   └── aws-auth-check.yaml # AWS OIDC authentication check
+│   └── aws-auth-check.yaml # OIDC authentication and S3 deployment
 ├── .gitignore
 ├── AGENTS.md           # Guidance for coding agents
 ├── PLAN.md             # Phase status, tasks, and completion criteria
@@ -47,15 +47,15 @@ favicon.svg
 assets/images/danish.webp
 ```
 
-For direct S3 website hosting, enable static website hosting and set the index document to `index.html`. The website objects need public read access, with compatible Block Public Access settings. Use the website endpoint shown in the bucket properties; it supports HTTP only. See the [AWS S3 hosting tutorial](https://docs.aws.amazon.com/AmazonS3/latest/userguide/HostingWebsiteOnS3Setup.html) and [website endpoint documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteEndpoints.html).
+The owner has configured `danishsuffian.cloud` with Route 53 DNS pointing to CloudFront, which accesses the S3 bucket through Origin Access Control (OAC). This is the current hosting setup, confirmed by the owner on 2026-09-16. OAC uses a regular S3 bucket origin rather than the S3 website endpoint. See [AWS guidance on private S3 origins](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html).
 
-The planned HTTPS setup uses CloudFront with a private S3 bucket and Origin Access Control. For that approach, leave S3 website hosting disabled, use the regular S3 bucket origin, and set CloudFront's default root object to `index.html`. See [AWS guidance on private S3 origins](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html). Deployment has not been verified. The authentication workflow checks AWS identity only; pushing to GitHub will not yet update S3. Upload changes manually until the CI/CD phase is implemented.
+Pushes to `main` trigger S3 uploads. CloudFront cache invalidation is not yet automated, so uploaded changes may remain cached until expiration or an explicit invalidation. Certificate configuration and direct-bucket access restrictions have not been independently inspected.
 
 Deferred portfolio ideas are in [FUTURE.md](FUTURE.md); engineering phases and validation remain in [PLAN.md](PLAN.md).
 
 ## GitHub Actions and OIDC
 
-Deployment learning is now in progress alongside the static frontend. The selected authentication approach is GitHub OIDC into an IAM deployment role in the production AWS account. GitHub issues an identity token; AWS STS validates it against the role trust policy and exchanges it for temporary AWS credentials. The upload command uses those credentials to access S3.
+Automated S3 deployment is implemented alongside ongoing frontend verification. The selected authentication approach is GitHub OIDC into an IAM deployment role in the production AWS account. GitHub issues an identity token; AWS STS validates it against the role trust policy and exchanges it for temporary AWS credentials. The upload command uses those credentials to access S3.
 
 No long-lived AWS access key needs to be stored or manually rotated in GitHub. Temporary credentials still include an access key ID, secret access key, and session token; they expire and are obtained again when needed. The GitHub identity token and AWS credentials are distinct. Scope the role trust to the intended repository and branch or environment, and scope its permissions to the intended bucket. See [GitHub OIDC guidance](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws) and [AWS temporary credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_request.html).
 
@@ -63,19 +63,22 @@ The workflow [`.github/workflows/aws-auth-check.yaml`](.github/workflows/aws-aut
 
 Its job runs on `ubuntu-latest` with `contents: read` for checkout and `id-token: write` for OIDC. The steps are:
 
-1. **Checkout Code:** fetch the repository using `actions/checkout@v4`.
+1. **Checkout Code:** fetch the repository using `actions/checkout@v6`.
 2. **Configure AWS Credentials:** use `aws-actions/configure-aws-credentials@v6.3.0` to assume the configured `cloud-resume-github-actions` role by its full ARN, with region `ap-southeast-1`.
 3. **Verify AWS Caller Identity:** run `aws sts get-caller-identity` to inspect the account and assumed-role identity.
+4. **Deploy Frontend to S3:** run `aws s3 sync frontend/ s3://danishsuffian-resume-s3/` to upload new or changed frontend files to the bucket root.
 
-After committing and pushing the workflow, inspect **Verify AWS Authentication** in the GitHub Actions tab. A successful identity check should show the intended production account and an assumed-role ARN for `cloud-resume-github-actions`. No successful run or AWS trust-policy configuration has been independently verified yet. The identity check does not prove S3 permissions or upload any files.
+The existing filename and display name are retained, although this workflow now performs deployment as well as authentication. It uses neither `--dryrun` nor `--delete`: uploads are real, and destination-only objects are retained. No CloudFront invalidation or automated frontend checks are implemented yet.
 
-After authentication succeeds, the same file can be renamed to `deploy-s3.yaml`, given a deployment display name, and extended with an S3 upload step. Retain checkout and AWS authentication. If separate workflows or jobs are used instead, the deployment job needs its own files and credentials; it does not inherit another job’s environment.
+The owner supplied a dry-run log showing the expected four asset paths and then confirmed successful actual upload on 2026-09-16. Authentication succeeded after matching the role trust policy to GitHub’s emitted subject, including immutable organization/repository IDs. The temporary claim-inspection step has been removed. Check the page, stylesheet, favicon, photo, and navigation through `danishsuffian.cloud`; CloudFront with OAC uses the S3 bucket origin, not a public S3 website endpoint.
+
+In GitHub’s Actions tab, inspect **Verify AWS Authentication** for the identity and upload results. A future rename to `deploy-s3.yaml` and a deployment display name would improve clarity, but is not required for execution.
 
 ## Edit content
 
 Update personal copy, links, experience, skills, and projects in `frontend/index.html`. Identity, contact details, and the portrait were supplied by the owner. Experience describes the provided professional background; employer names, dates, and measurable achievements have not been invented. Add those when available.
 
-Cloud Resume is marked in development, CloudOps is planned, and Umrah Travel Platform is a preview with potential capabilities. Add verified project outcomes and repository/demo links when available. Update the footer year when appropriate.
+Cloud Resume highlights completed cloud hosting and automated deployment with a simple checklist: green checkmarks for “Done” and orange outlined circles for “Planned.” CloudOps is planned, and Umrah Travel Platform is a preview with potential capabilities. Add verified project outcomes and repository/demo links when available. Update the footer year when appropriate.
 
 The supplied portrait lives at `frontend/assets/images/danish.webp` and appears beside the About heading in a circular frame (stacked on narrow screens). The header and two-line SVG favicon use “Danish Suffian.”
 
@@ -85,7 +88,7 @@ Style tokens are at the top of `frontend/styles.css`. There are no environment-s
 
 The 2026-09-15 source review found no blockers to an initial GitHub publication. HTML nesting, unique IDs, internal links, local assets, image attributes, and SVG XML checks passed. Representative Git ignore rules passed; a credential-pattern scan found no matches, and the supplied WebP contained no EXIF/XMP metadata. This was a source review, not a complete security or browser audit.
 
-The owner approved the circular portrait and About layout. Browser layout, keyboard, zoom, contrast, and print verification remain pending in `PLAN.md`. The initial review preceded Git initialization. Git now contains an initial commit and an origin remote for `DanishSuffian/cloud-resume`; remote publication has not been verified in this review.
+The owner approved the circular portrait and About layout. Browser layout, keyboard, zoom, contrast, and print verification remain pending in `PLAN.md`. The initial review preceded Git initialization. The repository is now `danishsuffian-labs/cloud-resume`. The owner supplied Actions output and confirmed successful OIDC authentication and S3 upload; this update did not independently access AWS or the live website.
 
 ## Frontend checks
 
@@ -97,10 +100,10 @@ The owner approved the circular portrait and About layout. Browser layout, keybo
 
 ## Roadmap
 
-1. **Current:** polished static portfolio.
-2. **AWS hosting:** Route 53 DNS, CloudFront, ACM HTTPS, private S3, and Origin Access Control.
+1. **Implemented:** static portfolio; browser verification remains.
+2. **AWS hosting:** Route 53 domain `danishsuffian.cloud`, CloudFront, and S3 access through OAC are configured (owner confirmation). Detailed hosting checks remain in `PLAN.md`.
 3. **Infrastructure as Code:** Terraform with understandable dev/prod separation.
-4. **CI/CD:** GitHub Actions with AWS OIDC, frontend deployment, and cache invalidation.
+4. **CI/CD:** GitHub Actions with OIDC and S3 upload implemented; frontend checks, deployment protections, rollback, and CloudFront cache invalidation remain.
 5. **Backend:** API Gateway, Lambda, and DynamoDB for a small serverless feature.
 6. **Observability:** useful CloudWatch dashboards and alarms.
 
