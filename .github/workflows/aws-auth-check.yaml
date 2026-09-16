@@ -20,6 +20,6 @@ jobs:
       - name: Verify AWS Caller Identity
         run: |
           aws sts get-caller-identity
-      - name: Preview Frontend Deployment
+      - name: Deploy Frontend to S3
         run: |
-          aws s3 sync frontend/ s3://danishsuffian-resume-s3/ --dryrun
+          aws s3 sync frontend/ s3://danishsuffian-resume-s3/
