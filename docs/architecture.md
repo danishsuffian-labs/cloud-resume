@@ -26,7 +26,7 @@ The frontend includes a skip link, descriptive landmarks, hierarchical headings,
 
 ## Content integrity
 
-The experience section summarizes supplied areas of work rather than presenting a dated employment history. Future cloud services are labeled as planned. No unprovided metrics, certifications, employers, or project links are claimed. The portfolio describes owner-confirmed automated S3 uploads and Route 53/CloudFront/OAC hosting. Its public roadmap uses a checklist with green checkmarks for “Done,” orange outlined circles for “Planned,” and subtle row dividers. Status text remains visible so meaning does not depend on color alone; outstanding verification is tracked in `PLAN.md`, not presented as a public milestone.
+The experience section summarizes supplied areas of work rather than presenting a dated employment history. Future cloud services are labeled as planned. No unprovided metrics, certifications, employers, or project links are claimed. The portfolio describes owner-confirmed automated S3 uploads, CloudFront invalidation, and HTTPS with Route 53/CloudFront/OAC hosting. Its public roadmap uses a checklist with green checkmarks for “Done,” orange outlined circles for “Planned,” and subtle row dividers. Status text remains visible so meaning does not depend on color alone; outstanding verification is tracked in `PLAN.md`, not presented as a public milestone.
 
 ## Verification boundary
 
@@ -38,11 +38,11 @@ Markdown documents belong to the source repository: `README.md` explains usage, 
 
 ## Deployment boundary
 
-`frontend/` is the complete static deployment artifact. Upload its contents to the bucket root, placing `index.html` beside `styles.css`, `favicon.svg`, and `assets/`. Repository documentation stays outside that artifact. Backend code and infrastructure can be introduced independently into their reserved directories. The frontend contains no API endpoint, credential, or analytics collector. The workflow in `.github/workflows/aws-auth-check.yaml` uploads the frontend to S3. The owner confirmed successful execution; AWS resources and live website access have not been independently inspected.
+`frontend/` is the complete static deployment artifact. Upload its contents to the bucket root, placing `index.html` beside `styles.css`, `favicon.svg`, and `assets/`. Repository documentation stays outside that artifact. Backend code and infrastructure can be introduced independently into their reserved directories. The frontend contains no API endpoint, credential, or analytics collector. The workflow in `.github/workflows/deploy-s3.yaml` uploads the frontend to S3. The owner confirmed successful execution; AWS resources and live website access have not been independently inspected.
 
-The owner confirmed Route 53 configuration for `danishsuffian.cloud` pointing to CloudFront, with CloudFront accessing S3 through OAC. DNS resolves the hostname; it does not proxy requests. The request path is browser → CloudFront → S3. Direct-bucket restrictions and certificate configuration still require independent inspection. The stylesheet URL includes a manual revision query for the milestone styling change; this is not an automated versioning strategy and does not replace CloudFront cache handling.
+The owner confirmed HTTPS and Route 53 configuration for `danishsuffian.cloud` pointing to CloudFront, with CloudFront accessing S3 through OAC. DNS resolves the hostname; it does not proxy requests. The request path is browser → CloudFront → S3. Direct-bucket restrictions and certificate configuration still require independent inspection. The stylesheet URL includes a manual revision query for the milestone styling change; this is not an automated versioning strategy and does not replace CloudFront cache handling.
 
-GitHub stores the source; S3 serves uploaded website files. The workflow retains the display name **Verify AWS Authentication** but now checks identity and uploads the frontend on pushes to `main`. CloudFront with OAC and the Route 53 domain are now configured according to the owner. Deployment instructions are in [README.md](../README.md), and implementation status is in [PLAN.md](../PLAN.md).
+GitHub stores the source; S3 serves uploaded website files. The **Deploy Portfolio** workflow checks identity, uploads the frontend, and requests CloudFront invalidation on pushes to `main`. CloudFront with OAC and the Route 53 domain are now configured according to the owner. Deployment instructions are in [README.md](../README.md), and implementation status is in [PLAN.md](../PLAN.md).
 
 ## Deployment authentication: GitHub OIDC
 
@@ -61,13 +61,13 @@ This avoids storing long-lived AWS keys in GitHub and their manual rotation. AWS
 
 ## Current workflow and verification
 
-`.github/workflows/aws-auth-check.yaml` uses `actions/checkout@v6`, `aws-actions/configure-aws-credentials@v6.3.0`, the configured deployment role, and region `ap-southeast-1`. After `aws sts get-caller-identity`, it runs:
+`.github/workflows/deploy-s3.yaml` uses `actions/checkout@v6`, `aws-actions/configure-aws-credentials@v6.3.0`, the configured deployment role, and region `ap-southeast-1`. After `aws sts get-caller-identity`, it runs:
 
 ```sh
 aws s3 sync frontend/ s3://danishsuffian-resume-s3/
 ```
 
-This uploads new or changed files to the bucket root. There is no `--delete`, so objects removed from the repository remain in S3 until separately removed. There are no automated frontend checks, CloudFront invalidations, or implemented rollback steps yet.
+This uploads new or changed files to the bucket root. There is no `--delete`, so objects removed from the repository remain in S3 until separately removed. After upload, the workflow requests `/*` invalidation on distribution `E2MC444L6LW7DX`. Automated frontend checks and rollback remain planned.
 
 The authentication issue was resolved by matching the trust policy to the exact subject GitHub emitted:
 
@@ -79,4 +79,16 @@ The audience is `sts.amazonaws.com`. These identifiers are identity metadata, no
 
 On 2026-09-16 the owner confirmed successful authentication and actual upload, following a dry run showing `index.html`, `styles.css`, `favicon.svg`, and `assets/images/danish.webp` at the expected paths. This records user-confirmed deployment evidence, not an independent AWS audit. Live-site and browser verification remain in [PLAN.md](../PLAN.md).
 
-Checkout and authentication must remain in the deployment job. Separate jobs do not inherit its local files or credentials. The workflow filename and display name can be updated to describe deployment without changing the trigger or upload behavior.
+Checkout and authentication must remain in the deployment job. Separate jobs do not inherit its local files or credentials. The workflow is now `deploy-s3.yaml`, named **Deploy Portfolio**, with job ID `deploy`.
+
+## CloudFront invalidation
+
+After the S3 sync succeeds, the workflow runs:
+
+```sh
+aws cloudfront create-invalidation --distribution-id E2MC444L6LW7DX --paths "/*"
+```
+
+The GitHub deployment role needs `cloudfront:CreateInvalidation` for `arn:aws:cloudfront::050649355884:distribution/E2MC444L6LW7DX`. The owner confirmed adding the permission and a successful workflow run. This extends the permissions policy; OIDC trust remains unchanged.
+
+The wildcard covers all URL paths, including the HTML, stylesheet, favicon, and photo. It is quoted so the shell passes it literally. Invalidation runs after upload so new origin files are available when CloudFront fetches them. Each executed step submits a new request, even on a rerun or an unchanged sync. Completion is asynchronous; the workflow does not currently wait for propagation. Browser caches are separate. Future work can reduce unnecessary runs and add a completion wait if needed.
