@@ -1,4 +1,4 @@
-name: Verify AWS Authentication
+name: Deploy Portfolio
 permissions:
   id-token: write
   contents: read
@@ -7,7 +7,7 @@ on:
     branches:
       - main
 jobs:
-  run_job_with_aws:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -23,3 +23,6 @@ jobs:
       - name: Deploy Frontend to S3
         run: |
           aws s3 sync frontend/ s3://danishsuffian-resume-s3/
+      - name: Invalidate Cloudfront Cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id E2MC444L6LW7DX --paths "/*"
