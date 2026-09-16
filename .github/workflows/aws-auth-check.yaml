@@ -12,6 +12,19 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
+      - name: Inspect OIDC identity claims
+        run: |
+          python3 - <<'PY'
+          import os, json, base64, urllib.request
+
+          url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"] + "&audience=sts.amazonaws.com"
+          })
+          with urllib.request.urlopen(request) as response:
+              token = json.load(response)["value"]
+
+          print("sub:", claims["sub"])
+          print("aud:", claims["aud"])
+          PY
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v6.3.0
         with:
