@@ -6,7 +6,7 @@ Create a professional portfolio that communicates Danish Suffian’s software an
 
 ## Current position
 
-**Active phase: Phase 1 — static frontend.** The static implementation exists, and the owner approved the circular portrait and About layout. Browser verification remains before considering Phase 1 complete; additional content enhancements are deferred in `FUTURE.md`. Later phases are planning only and require an explicit request to begin.
+**Active work: Phase 1 frontend verification and Phase 4 GitHub Actions/OIDC learning.** The static implementation exists, and the owner approved the circular portrait and About layout. Browser verification remains before considering Phase 1 complete; additional content enhancements are deferred in `FUTURE.md`. The owner has authored an OIDC authentication-check workflow as the first step toward S3 deployment. Terraform, backend, and observability remain planning only.
 
 Current decision: keep plain HTML/CSS. Revisit React when a concrete interaction benefits from component state, or when learning React becomes an explicit project goal. See `docs/architecture.md` for the reasoning.
 
@@ -33,7 +33,8 @@ Current decision: keep plain HTML/CSS. Revisit React when a concrete interaction
 - [x] Scan text files for common credential patterns: no matches found. Inspect the WebP container: no EXIF/XMP metadata present. These checks do not constitute a full security audit.
 - [x] Record the owner’s approval of the circular portrait and About layout.
 - [x] Refresh all five Markdown documents to match the implementation and publication boundaries.
-- [ ] Initialize Git, create the initial commit, connect the intended GitHub remote, and verify the push. No Git repository existed at review time.
+- [x] Initialize Git, create the initial commit, and configure the origin remote (observed initial commit `7ba1866` and remote for `DanishSuffian/cloud-resume`).
+- [ ] Verify publication to GitHub; local Git state does not establish a successful remote push.
 
 No source-level blocker to initial GitHub publication was found. This does not complete the browser checks or establish a live deployment.
 
@@ -72,10 +73,17 @@ Manual S3 website hosting has been discussed; no deployment has been verified. `
 
 **Completion criteria:** infrastructure can be reproduced from documented Terraform configuration with isolated environment state and reviewed changes.
 
-## Phase 4 — CI/CD (not started)
+## Phase 4 — CI/CD (authentication check implemented; execution pending)
 
-There is currently no connection that deploys GitHub changes to S3. Until this phase is implemented, updating the source repository and uploading the website are separate steps.
+The workflow `.github/workflows/aws-auth-check.yaml` is named **Verify AWS Authentication**. It checks out code, assumes the configured `cloud-resume-github-actions` role through OIDC in `ap-southeast-1`, and runs **Verify AWS Caller Identity**. The local file has a full role ARN and triggers on pushes to `main`. As of the 2026-09-16 source inspection, the workflow is untracked locally; no successful Actions run or AWS-side configuration has been verified. It contains no S3 upload step.
 
+- [x] Record the OIDC authentication decision.
+- [x] Place `aws-auth-check.yaml` in `.github/workflows/`, set its display name, and define the push-to-main trigger.
+- [x] Add checkout, `contents: read`, `id-token: write`, a full role ARN, and AWS region.
+- [x] Add the **Verify AWS Caller Identity** step using `aws sts get-caller-identity`.
+- [ ] Commit and push the workflow, then verify OIDC role assumption and the expected production identity in Actions logs.
+- [ ] Configure the target S3 bucket and required upload permissions.
+- [ ] After authentication succeeds, evolve the workflow into `deploy-s3.yaml`, retaining checkout and authentication and adding the frontend upload.
 - [ ] Add appropriate frontend checks before deployment.
 - [ ] Configure GitHub Actions OIDC with scoped AWS role trust and permissions.
 - [ ] Deploy the frontend to S3 and refresh CloudFront content using the chosen caching strategy.

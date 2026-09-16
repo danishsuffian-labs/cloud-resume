@@ -25,7 +25,8 @@ cloud-resume/
 ├── infrastructure/     # Reserved for later AWS / Terraform work
 ├── docs/
 │   └── architecture.md
-├── .github/workflows/  # Reserved for Phase 4; no workflows yet
+├── .github/workflows/
+│   └── aws-auth-check.yaml # AWS OIDC authentication check
 ├── .gitignore
 ├── AGENTS.md           # Guidance for coding agents
 ├── PLAN.md             # Phase status, tasks, and completion criteria
@@ -48,9 +49,27 @@ assets/images/danish.webp
 
 For direct S3 website hosting, enable static website hosting and set the index document to `index.html`. The website objects need public read access, with compatible Block Public Access settings. Use the website endpoint shown in the bucket properties; it supports HTTP only. See the [AWS S3 hosting tutorial](https://docs.aws.amazon.com/AmazonS3/latest/userguide/HostingWebsiteOnS3Setup.html) and [website endpoint documentation](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteEndpoints.html).
 
-The planned HTTPS setup uses CloudFront with a private S3 bucket and Origin Access Control. For that approach, leave S3 website hosting disabled, use the regular S3 bucket origin, and set CloudFront's default root object to `index.html`. See [AWS guidance on private S3 origins](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html). Deployment has not been verified. No deployment workflow exists: pushing to GitHub will not update S3. Upload changes manually until the CI/CD phase is implemented.
+The planned HTTPS setup uses CloudFront with a private S3 bucket and Origin Access Control. For that approach, leave S3 website hosting disabled, use the regular S3 bucket origin, and set CloudFront's default root object to `index.html`. See [AWS guidance on private S3 origins](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html). Deployment has not been verified. The authentication workflow checks AWS identity only; pushing to GitHub will not yet update S3. Upload changes manually until the CI/CD phase is implemented.
 
 Deferred portfolio ideas are in [FUTURE.md](FUTURE.md); engineering phases and validation remain in [PLAN.md](PLAN.md).
+
+## GitHub Actions and OIDC
+
+Deployment learning is now in progress alongside the static frontend. The selected authentication approach is GitHub OIDC into an IAM deployment role in the production AWS account. GitHub issues an identity token; AWS STS validates it against the role trust policy and exchanges it for temporary AWS credentials. The upload command uses those credentials to access S3.
+
+No long-lived AWS access key needs to be stored or manually rotated in GitHub. Temporary credentials still include an access key ID, secret access key, and session token; they expire and are obtained again when needed. The GitHub identity token and AWS credentials are distinct. Scope the role trust to the intended repository and branch or environment, and scope its permissions to the intended bucket. See [GitHub OIDC guidance](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws) and [AWS temporary credentials](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_request.html).
+
+The workflow [`.github/workflows/aws-auth-check.yaml`](.github/workflows/aws-auth-check.yaml) is named **Verify AWS Authentication**. It runs on pushes to `main`, including merges from `dev`, direct pushes, and merges from other branches unless repository controls restrict them.
+
+Its job runs on `ubuntu-latest` with `contents: read` for checkout and `id-token: write` for OIDC. The steps are:
+
+1. **Checkout Code:** fetch the repository using `actions/checkout@v4`.
+2. **Configure AWS Credentials:** use `aws-actions/configure-aws-credentials@v6.3.0` to assume the configured `cloud-resume-github-actions` role by its full ARN, with region `ap-southeast-1`.
+3. **Verify AWS Caller Identity:** run `aws sts get-caller-identity` to inspect the account and assumed-role identity.
+
+After committing and pushing the workflow, inspect **Verify AWS Authentication** in the GitHub Actions tab. A successful identity check should show the intended production account and an assumed-role ARN for `cloud-resume-github-actions`. No successful run or AWS trust-policy configuration has been independently verified yet. The identity check does not prove S3 permissions or upload any files.
+
+After authentication succeeds, the same file can be renamed to `deploy-s3.yaml`, given a deployment display name, and extended with an S3 upload step. Retain checkout and AWS authentication. If separate workflows or jobs are used instead, the deployment job needs its own files and credentials; it does not inherit another job’s environment.
 
 ## Edit content
 
@@ -66,7 +85,7 @@ Style tokens are at the top of `frontend/styles.css`. There are no environment-s
 
 The 2026-09-15 source review found no blockers to an initial GitHub publication. HTML nesting, unique IDs, internal links, local assets, image attributes, and SVG XML checks passed. Representative Git ignore rules passed; a credential-pattern scan found no matches, and the supplied WebP contained no EXIF/XMP metadata. This was a source review, not a complete security or browser audit.
 
-The owner approved the circular portrait and About layout. Browser layout, keyboard, zoom, contrast, and print verification remain pending in `PLAN.md`. At the review date, this folder had no Git repository initialized; no push was performed.
+The owner approved the circular portrait and About layout. Browser layout, keyboard, zoom, contrast, and print verification remain pending in `PLAN.md`. The initial review preceded Git initialization. Git now contains an initial commit and an origin remote for `DanishSuffian/cloud-resume`; remote publication has not been verified in this review.
 
 ## Frontend checks
 

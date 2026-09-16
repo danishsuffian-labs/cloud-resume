@@ -1,4 +1,4 @@
-# Phase 1 architecture
+# Cloud Resume architecture
 
 ## Static HTML and CSS
 
@@ -38,8 +38,27 @@ Markdown documents belong to the source repository: `README.md` explains usage, 
 
 ## Future deployment boundary
 
-`frontend/` is the complete static deployment artifact. Upload its contents to the bucket root, placing `index.html` beside `styles.css`, `favicon.svg`, and `assets/`. Repository documentation stays outside that artifact. Backend code and infrastructure can be introduced independently into their reserved directories. No API endpoint, credential, cloud resource, deployment workflow, or analytics collector exists in this phase.
+`frontend/` is the complete static deployment artifact. Upload its contents to the bucket root, placing `index.html` beside `styles.css`, `favicon.svg`, and `assets/`. Repository documentation stays outside that artifact. Backend code and infrastructure can be introduced independently into their reserved directories. The frontend contains no API endpoint, credential, or analytics collector. An authentication-check workflow exists in `.github/workflows/aws-auth-check.yaml`; AWS resources and deployment have not been inspected or verified.
 
 When AWS hosting is introduced, Route 53 will resolve the domain to CloudFront; CloudFront will serve content from private S3 using Origin Access Control. DNS resolves the hostname rather than proxying application requests. HTTPS, cache behavior, response security headers, and deployment permissions will be configured in that phase. The stylesheet URL includes a manual revision query to refresh cached CSS after the portrait sizing change. This is not an automated asset-versioning strategy; do not assume immutable caching.
 
-GitHub stores the source; S3 serves uploaded website files. No deployment workflow connects them yet, so a GitHub push alone does not update S3. Direct S3 website hosting was discussed as a manual first step; the planned HTTPS architecture remains private S3 with CloudFront and OAC. Deployment instructions are in [README.md](../README.md), and implementation status is in [PLAN.md](../PLAN.md).
+GitHub stores the source; S3 serves uploaded website files. The **Verify AWS Authentication** workflow responds to pushes to `main` but checks AWS identity only, so a GitHub push does not yet update S3. Direct S3 website hosting was discussed as a manual first step; the planned HTTPS architecture remains private S3 with CloudFront and OAC. Deployment instructions are in [README.md](../README.md), and implementation status is in [PLAN.md](../PLAN.md).
+
+## Deployment authentication: GitHub OIDC
+
+The owner selected OIDC for GitHub Actions to authenticate to AWS. The production account holds the GitHub IAM OIDC provider and the deployment role in the intended design; IAM Identity Center continues to provide human account access. AWS requires the OIDC provider and its trusting role to reside in the same account. See [AWS OIDC provider guidance](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc.html).
+
+The authentication sequence is:
+
+1. The workflow job requests a GitHub OIDC identity token with `id-token: write`.
+2. The AWS credentials action sends that token to AWS STS through `AssumeRoleWithWebIdentity`.
+3. AWS validates the token and the role’s trust conditions, then returns temporary AWS credentials.
+4. The AWS CLI uses those credentials to perform operations permitted by the role, such as uploading frontend assets to S3.
+
+`id-token: write` permits requesting an identity token; it does not grant S3 write access. The trust policy controls who can assume the role, while the permissions policy controls the allowed AWS operations. Repository checkout also needs its own appropriate GitHub permissions.
+
+This avoids storing long-lived AWS keys in GitHub and their manual rotation. AWS still issues a temporary access key ID, secret access key, and session token with an expiration. New credentials are requested for subsequent sessions. Expiration does not replace scoped trust and permissions. See [GitHub OIDC setup](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws) and [AWS STS credential exchange](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_request.html).
+
+Implementation status: `.github/workflows/aws-auth-check.yaml` defines a push-to-main trigger, an Ubuntu runner, checkout, OIDC permissions, the full ARN of `cloud-resume-github-actions`, and region `ap-southeast-1`. Its last step, **Verify AWS Caller Identity**, runs `aws sts get-caller-identity`. This checks the account and assumed-role session; it does not test S3 permissions or write objects. Successful OIDC authentication and deployment remain unverified in [PLAN.md](../PLAN.md).
+
+The next increment is to verify authentication before evolving this workflow into `deploy-s3.yaml`. Renaming the file does not change its trigger; the top-level `name` controls the display name. Checkout and credential configuration remain necessary in the deployment job. Separate jobs or workflows do not automatically share the checkout or temporary credentials.

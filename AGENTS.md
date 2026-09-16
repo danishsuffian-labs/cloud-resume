@@ -4,7 +4,7 @@
 
 Build Danish Suffian’s portfolio across software engineering and cloud engineering. Prefer simple, readable solutions and architecture decisions the owner can explain in an interview.
 
-The active scope is **Phase 1: the local static frontend**. `PLAN.md` records progress and future work; an unchecked roadmap item is not authorization to implement it. Do not create AWS resources, Terraform, CI/CD workflows, backend services, or analytics unless the user requests that scope. Follow the user's latest explicit direction when the scope changes.
+The active scope is **the static frontend plus user-guided GitHub Actions/OIDC learning for S3 deployment**. The owner wants to understand and author the YAML; guide them through it rather than completing the workflow unasked. `PLAN.md` records progress and future work; an unchecked roadmap item is not authorization to implement it. Do not create AWS resources, Terraform, CI/CD workflows, backend services, or analytics unless the user requests that scope. Follow the user's latest explicit direction when the scope changes.
 
 ## Before making changes
 
@@ -19,7 +19,8 @@ The active scope is **Phase 1: the local static frontend**. `PLAN.md` records pr
 - `frontend/styles.css`: shared design tokens, component classes, responsive behavior, and print styles.
 - `frontend/favicon.svg`: two-line “Danish Suffian” SVG wordmark.
 - `frontend/assets/images/danish.webp`: supplied portrait, presented in a circular frame beside the About heading.
-- `backend/`, `infrastructure/`, and `.github/workflows/`: reserved directories only.
+- `.github/workflows/aws-auth-check.yaml`: **Verify AWS Authentication**, triggered by pushes to `main`; checks out code, assumes the configured AWS role using OIDC, and checks caller identity. No S3 upload step exists; successful execution is unverified.
+- `backend/` and `infrastructure/`: reserved directories only.
 - No package manager, build step, JavaScript, framework, or automated test suite currently exists.
 
 Keep HTML/CSS as the default. Add dependencies or abstractions only to solve a concrete requirement, explaining the tradeoff. React is under consideration, not an approved migration. Small interactions may use plain JavaScript when requested; keep configuration separate from behavior and never put credentials in frontend code.
@@ -33,6 +34,10 @@ Keep HTML/CSS as the default. Add dependencies or abstractions only to solve a c
 - Distinguish implemented capabilities from planned work. Preserve honest project status labels.
 - Maintain semantic headings, meaningful link text, keyboard access, visible focus, reduced-motion support, and mobile layouts.
 - Prefer native HTML controls and local assets. Avoid unnecessary animation, remote fonts, trackers, or a simulated contact form.
+
+## Deployment authentication
+
+Use GitHub OIDC and a dedicated IAM role in the production account for deployment. Keep human access through IAM Identity Center separate. Do not add long-lived AWS keys to the repository or workflow. GitHub’s identity token is exchanged through AWS STS for temporary AWS credentials; it is not sent directly to S3. Do not mark OIDC or deployment verified without a successful run. The identity check verifies authentication, not S3 upload permissions. When evolving the check into `deploy-s3.yaml`, retain checkout and authentication in the deployment job.
 
 ## Validation
 
